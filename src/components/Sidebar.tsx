@@ -1,0 +1,89 @@
+import { NavLink } from "react-router-dom";
+import { Users, Calendar, Info, Building2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const navigationItems = [
+  {
+    name: "Clients",
+    href: "/clients",
+    icon: Users,
+    description: "Manage client relationships"
+  },
+  {
+    name: "Calendar",
+    href: "/calendar",
+    icon: Calendar,
+    description: "Schedule and track meetings"
+  },
+  {
+    name: "About",
+    href: "/about",
+    icon: Info,
+    description: "Platform information"
+  }
+];
+
+export function Sidebar() {
+  return (
+    <div className="flex h-screen w-72 flex-col bg-gradient-subtle border-r border-border shadow-card">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-6 py-8 border-b border-border">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary shadow-card">
+          <Building2 className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold text-foreground">RealEstate Pro</h1>
+          <p className="text-sm text-muted-foreground">Expert Dashboard</p>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 space-y-2 p-4">
+        {navigationItems.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground group",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-hover"
+                  : "text-muted-foreground hover:text-foreground"
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <item.icon 
+                  className={cn(
+                    "h-5 w-5 transition-transform duration-200 group-hover:scale-110",
+                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-accent-foreground"
+                  )} 
+                />
+                <div className="flex flex-col">
+                  <span>{item.name}</span>
+                  <span className={cn(
+                    "text-xs opacity-75",
+                    isActive ? "text-primary-foreground/80" : "text-muted-foreground group-hover:text-accent-foreground/80"
+                  )}>
+                    {item.description}
+                  </span>
+                </div>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="border-t border-border p-4">
+        <div className="rounded-lg bg-accent/10 p-3">
+          <p className="text-xs font-medium text-accent">Professional Edition</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Advanced real estate management tools
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
