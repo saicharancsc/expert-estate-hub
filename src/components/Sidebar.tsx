@@ -1,6 +1,8 @@
-import { NavLink } from "react-router-dom";
-import { Users, Calendar, Info, Building2 } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Users, Calendar, Info, Building2, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const navigationItems = [
   {
@@ -24,6 +26,17 @@ const navigationItems = [
 ];
 
 export function Sidebar() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    // Clear any stored auth data here
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+    navigate("/signin");
+  };
   return (
     <div className="flex h-screen w-72 flex-col bg-gradient-subtle border-r border-border shadow-card">
       {/* Header */}
@@ -76,7 +89,16 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-4 space-y-3">
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-accent"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Logout</span>
+        </Button>
+        
         <div className="rounded-lg bg-accent/10 p-3">
           <p className="text-xs font-medium text-accent">Professional Edition</p>
           <p className="text-xs text-muted-foreground mt-1">
