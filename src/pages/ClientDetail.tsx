@@ -23,6 +23,9 @@ const mockClientData = {
     priority: "High",
     preferences: "Modern condos, 2-3 bedrooms, downtown location",
     budget: "$800,000 - $1,200,000",
+    possessionTimeline: "3-6 months",
+    propertyConfiguration: "2-3 bedrooms, 2+ bathrooms, parking included",
+    preferredLocations: "Downtown Seattle, Belltown, Capitol Hill",
     lastContact: "2024-01-15",
     rating: 4.8,
     notes: "Looking for modern amenities, prefers high-rise buildings with city views.",
@@ -163,6 +166,18 @@ export default function ClientDetail() {
               <div>
                 <p className="text-sm font-medium mb-1">Budget Range</p>
                 <p className="text-sm text-muted-foreground font-semibold text-success">{client.budget}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1">Possession Timeline</p>
+                <p className="text-sm text-muted-foreground">{client.possessionTimeline}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1">Property Configuration</p>
+                <p className="text-sm text-muted-foreground">{client.propertyConfiguration}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1">Preferred Locations</p>
+                <p className="text-sm text-muted-foreground">{client.preferredLocations}</p>
               </div>
               <div>
                 <p className="text-sm font-medium mb-1">Notes</p>
