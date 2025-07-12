@@ -210,7 +210,7 @@ export default function ClientDetail() {
 
         {/* Right Column - Tabs */}
         <div className="lg:col-span-2">
-          <Tabs defaultValue="properties" className="space-y-6">
+          <Tabs defaultValue="properties" className="space-y-6 sticky top-6 max-h-[calc(100vh-2rem)] overflow-y-auto">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="properties">Matched Properties</TabsTrigger>
               <TabsTrigger value="conversations">Conversations</TabsTrigger>
