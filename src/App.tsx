@@ -8,6 +8,8 @@ import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
 import Calendar from "./pages/Calendar";
 import About from "./pages/About";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,7 +21,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route index element={<Navigate to="/clients" replace />} />
+          <Route index element={<Navigate to="/signin" replace />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="/" element={<Layout />}>
             <Route path="clients" element={<Clients />} />
             <Route path="clients/:id" element={<ClientDetail />} />
