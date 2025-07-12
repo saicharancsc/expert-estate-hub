@@ -319,7 +319,23 @@ export default function ClientDetail() {
             </TabsContent>
 
             <TabsContent value="conversations" className="space-y-4">
-              <h3 className="text-lg font-semibold">Recent Conversations</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Recent Conversations</h3>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Call Bot
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Web Bot
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    WhatsApp Bot
+                  </Button>
+                </div>
+              </div>
               
               <div className="space-y-3">
                 {client.conversations.map((conversation, index) => (
