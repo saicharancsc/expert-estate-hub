@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock, MapPin, User, Video, Phone, MessageSquare } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, User, Video, Phone, MessageSquare, ChevronDown } from "lucide-react";
 
 type FilterPeriod = "today" | "tomorrow" | "week" | "month";
 
@@ -122,6 +122,7 @@ const getMeetingIcon = (type: string) => {
 
 export default function Calendar() {
   const [activeFilter, setActiveFilter] = useState<FilterPeriod>("today");
+  const [meetingTypeFilter, setMeetingTypeFilter] = useState("all");
   const navigate = useNavigate();
 
   const filterMeetings = (period: FilterPeriod) => {
@@ -152,7 +153,12 @@ export default function Calendar() {
     });
   };
 
-  const filteredMeetings = filterMeetings(activeFilter);
+  const filteredMeetings = filterMeetings(activeFilter).filter(meeting => {
+    if (meetingTypeFilter === "all") return true;
+    if (meetingTypeFilter === "propertyvisits") return meeting.type.toLowerCase().includes("visit");
+    if (meetingTypeFilter === "meetings") return meeting.type.toLowerCase().includes("meeting") || meeting.type.toLowerCase().includes("consultation") || meeting.type.toLowerCase().includes("review") || meeting.type.toLowerCase().includes("tour") || meeting.type.toLowerCase().includes("follow-up") || meeting.type.toLowerCase().includes("inspection");
+    return true;
+  });
 
   const handleMeetingClick = (clientId: string) => {
     navigate(`/clients/${clientId}`);
@@ -258,10 +264,25 @@ export default function Calendar() {
           <h2 className="text-xl font-semibold">
             Meetings for {filterButtons.find(f => f.period === activeFilter)?.label}
           </h2>
-          <Button variant="professional">
-            <CalendarIcon className="h-4 w-4 mr-2" />
-            Schedule Meeting
-          </Button>
+          <div className="flex gap-2 items-center">
+            {/* New filter dropdown */}
+            <div className="relative inline-block">
+              <select
+                className="appearance-none border rounded px-3 py-1.5 text-sm pr-8 focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-background hover:bg-accent/10 cursor-pointer"
+                value={meetingTypeFilter}
+                onChange={e => setMeetingTypeFilter(e.target.value)}
+              >
+                <option value="all">ALL</option>
+                <option value="propertyvisits">Property Visits</option>
+                <option value="meetings">Meetings</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
+            <Button variant="professional">
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Schedule Meeting
+            </Button>
+          </div>
         </div>
 
         {filteredMeetings.length === 0 ? (
@@ -306,8 +327,23 @@ export default function Calendar() {
                       </div>
                       <div>{meeting.clientName}</div>
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>{meeting.location}</span>
+                        {/* <MapPin className="h-4 w-4" /> */}
+                        {/* Only show location text for non-virtual meetings */}
+                        {meeting.meetingType !== "virtual" && <span>{meeting.location}</span>}
+                        {/* Add Zoom button for virtual meetings */}
+                        {meeting.meetingType === "virtual" && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="ml-2"
+                            onClick={e => {
+                              e.stopPropagation();
+                              window.open("https://zoom.us/j/1234567890", "_blank");
+                            }}
+                          >
+                            Join Zoom
+                          </Button>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="h-4 w-4" />
