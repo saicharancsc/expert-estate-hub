@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   ArrowLeft, MapPin, Phone, Mail, Calendar, Star, 
   MessageSquare, Home, Bath, Car, Square, 
-  Eye, Heart, Share, DollarSign 
+  Eye, Heart, Share, DollarSign, Bookmark, 
+  CalendarDays, Clock 
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data - in real app, this would come from API
 const mockClientData = {
@@ -83,6 +88,16 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [shortlistedProperties, setShortlistedProperties] = useState<any[]>([]);
+  const [availableProperties, setAvailableProperties] = useState<any[]>(
+    mockClientData[id as keyof typeof mockClientData]?.matchedProperties || []
+  );
+  const [siteVisitDialog, setSiteVisitDialog] = useState(false);
+  const [siteVisitProperty, setSiteVisitProperty] = useState<any>(null);
+  const [siteVisitDate, setSiteVisitDate] = useState("");
+  const [siteVisitTime, setSiteVisitTime] = useState("");
+  const [siteVisitNotes, setSiteVisitNotes] = useState("");
+  const { toast } = useToast();
   
   const client = mockClientData[id as keyof typeof mockClientData];
 
@@ -101,6 +116,43 @@ export default function ClientDetail() {
     if (match >= 90) return "default";
     if (match >= 80) return "secondary";
     return "outline";
+  };
+
+  const handleShortList = (property: any) => {
+    setShortlistedProperties(prev => [...prev, property]);
+    setAvailableProperties(prev => prev.filter(p => p.id !== property.id));
+    toast({
+      title: "Property Shortlisted",
+      description: `${property.title} has been added to your shortlist.`,
+    });
+  };
+
+  const handleSiteVisit = (property: any) => {
+    setSiteVisitProperty(property);
+    setSiteVisitDialog(true);
+  };
+
+  const scheduleSiteVisit = () => {
+    if (!siteVisitDate || !siteVisitTime) {
+      toast({
+        title: "Missing Information",
+        description: "Please select both date and time for the site visit.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Site Visit Scheduled",
+      description: `Site visit for ${siteVisitProperty?.title} scheduled for ${siteVisitDate} at ${siteVisitTime}.`,
+    });
+
+    // Reset form
+    setSiteVisitDialog(false);
+    setSiteVisitProperty(null);
+    setSiteVisitDate("");
+    setSiteVisitTime("");
+    setSiteVisitNotes("");
   };
 
   return (
@@ -211,19 +263,20 @@ export default function ClientDetail() {
         {/* Right Column - Tabs */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="properties" className="space-y-6 sticky top-6 max-h-[calc(100vh-2rem)] overflow-y-auto">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="properties">Matched Properties</TabsTrigger>
+              <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
               <TabsTrigger value="conversations">Conversations</TabsTrigger>
             </TabsList>
 
             <TabsContent value="properties" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Property Matches</h3>
-                <Badge variant="outline">{client.matchedProperties.length} total matches</Badge>
+                <Badge variant="outline">{availableProperties.length} available matches</Badge>
               </div>
               
               <div className="grid gap-4 md:grid-cols-2">
-                {client.matchedProperties.map((property, index) => (
+                {availableProperties.map((property, index) => (
                   <Card 
                     key={property.id}
                     className="cursor-pointer hover:shadow-hover transition-all duration-200 animate-slide-up"
@@ -305,17 +358,146 @@ export default function ClientDetail() {
                             </div>
                           </DialogContent>
                         </Dialog>
-                        <Button variant="ghost" size="sm">
-                          <Heart className="h-4 w-4" />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleShortList(property)}
+                        >
+                          <Bookmark className="h-4 w-4 mr-1" />
+                          Short List
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Share className="h-4 w-4" />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleSiteVisit(property)}
+                        >
+                          <CalendarDays className="h-4 w-4 mr-1" />
+                          Site Visit
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            <TabsContent value="shortlisted" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Shortlisted Properties</h3>
+                <Badge variant="outline">{shortlistedProperties.length} shortlisted</Badge>
+              </div>
+              
+              {shortlistedProperties.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Bookmark className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No properties shortlisted yet</p>
+                  <p className="text-sm">Click "Short List" on any property to add it here</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {shortlistedProperties.map((property, index) => (
+                    <Card 
+                      key={property.id}
+                      className="cursor-pointer hover:shadow-hover transition-all duration-200 animate-slide-up"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <div className="relative">
+                        <div className="h-48 bg-muted rounded-t-lg flex items-center justify-center">
+                          <Home className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                        <Badge 
+                          variant={getMatchColor(property.match) as any}
+                          className="absolute top-2 right-2"
+                        >
+                          {property.match}% match
+                        </Badge>
+                        <Badge 
+                          variant="default"
+                          className="absolute top-2 left-2"
+                        >
+                          <Bookmark className="h-3 w-3 mr-1" />
+                          Shortlisted
+                        </Badge>
+                      </div>
+                      
+                      <CardContent className="p-4 space-y-3">
+                        <div>
+                          <h4 className="font-semibold text-foreground">{property.title}</h4>
+                          <p className="text-sm text-muted-foreground">{property.address}</p>
+                          <p className="text-lg font-bold text-success mt-1">{property.price}</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Home className="h-4 w-4" />
+                            {property.bedrooms} bed
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Bath className="h-4 w-4" />
+                            {property.bathrooms} bath
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Square className="h-4 w-4" />
+                            {property.sqft} sqft
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 pt-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => setSelectedProperty(property)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>{property.title}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
+                                  <Home className="h-16 w-16 text-muted-foreground" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <p className="text-sm font-medium">Address</p>
+                                    <p className="text-sm text-muted-foreground">{property.address}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Price</p>
+                                    <p className="text-sm font-semibold text-success">{property.price}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Bedrooms</p>
+                                    <p className="text-sm text-muted-foreground">{property.bedrooms}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Bathrooms</p>
+                                    <p className="text-sm text-muted-foreground">{property.bathrooms}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleSiteVisit(property)}
+                          >
+                            <CalendarDays className="h-4 w-4 mr-1" />
+                            Site Visit
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="conversations" className="space-y-4">
@@ -347,6 +529,65 @@ export default function ClientDetail() {
           </Tabs>
         </div>
       </div>
+
+      {/* Site Visit Scheduling Dialog */}
+      <Dialog open={siteVisitDialog} onOpenChange={setSiteVisitDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Schedule Site Visit</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-2">{siteVisitProperty?.title}</h4>
+              <p className="text-sm text-muted-foreground">{siteVisitProperty?.address}</p>
+              <p className="text-sm font-semibold text-success">{siteVisitProperty?.price}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="visit-date">Date</Label>
+                <Input
+                  id="visit-date"
+                  type="date"
+                  value={siteVisitDate}
+                  onChange={(e) => setSiteVisitDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="visit-time">Time</Label>
+                <Input
+                  id="visit-time"
+                  type="time"
+                  value={siteVisitTime}
+                  onChange={(e) => setSiteVisitTime(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="visit-notes">Notes (Optional)</Label>
+              <Textarea
+                id="visit-notes"
+                placeholder="Add any special requirements or notes for the site visit..."
+                value={siteVisitNotes}
+                onChange={(e) => setSiteVisitNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSiteVisitDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={scheduleSiteVisit}>
+                <Clock className="h-4 w-4 mr-2" />
+                Schedule Visit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
