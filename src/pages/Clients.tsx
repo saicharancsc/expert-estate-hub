@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Phone, Mail, Calendar, Star } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock client data
 const mockClients = [
@@ -82,7 +84,11 @@ const getPriorityColor = (priority: string) => {
 
 export default function Clients() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [clientPriorities, setClientPriorities] = useState<Record<string, string>>(
+    Object.fromEntries(mockClients.map(client => [client.id, client.priority]))
+  );
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const filteredClients = mockClients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,6 +98,17 @@ export default function Clients() {
 
   const handleClientClick = (clientId: string) => {
     navigate(`/clients/${clientId}`);
+  };
+
+  const handlePriorityChange = (clientId: string, newPriority: string) => {
+    setClientPriorities(prev => ({
+      ...prev,
+      [clientId]: newPriority
+    }));
+    toast({
+      title: "Priority Updated",
+      description: `Client priority has been changed to ${newPriority}`,
+    });
   };
 
   return (
@@ -149,13 +166,25 @@ export default function Clients() {
                 </div>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Badge variant={getStatusColor(client.status) as any}>
                   {client.status}
                 </Badge>
-                <Badge variant={getPriorityColor(client.priority) as any}>
-                  {client.priority} Priority
-                </Badge>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    value={clientPriorities[client.id]}
+                    onValueChange={(value) => handlePriorityChange(client.id, value)}
+                  >
+                    <SelectTrigger className="w-32 h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Low">Low Priority</SelectItem>
+                      <SelectItem value="Medium">Medium Priority</SelectItem>
+                      <SelectItem value="High">High Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             
