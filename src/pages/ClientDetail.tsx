@@ -12,7 +12,7 @@ import {
   ArrowLeft, MapPin, Phone, Mail, Calendar, Star, 
   MessageSquare, Home, Bath, Car, Square, 
   Eye, Heart, Share, DollarSign, Bookmark, 
-  CalendarDays, Clock 
+  CalendarDays, Clock, X 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -130,6 +130,15 @@ export default function ClientDetail() {
   const handleSiteVisit = (property: any) => {
     setSiteVisitProperty(property);
     setSiteVisitDialog(true);
+  };
+
+  const handleRemoveFromShortlist = (property: any) => {
+    setShortlistedProperties(prev => prev.filter(p => p.id !== property.id));
+    setAvailableProperties(prev => [...prev, property]);
+    toast({
+      title: "Property Removed",
+      description: `${property.title} has been removed from your shortlist.`,
+    });
   };
 
   const scheduleSiteVisit = () => {
@@ -491,6 +500,14 @@ export default function ClientDetail() {
                           >
                             <CalendarDays className="h-4 w-4 mr-1" />
                             Site Visit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleRemoveFromShortlist(property)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
                           </Button>
                         </div>
                       </CardContent>
