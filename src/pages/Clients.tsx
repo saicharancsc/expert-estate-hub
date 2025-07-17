@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Phone, Mail, Calendar, Star } from "lucide-react";
+import { Search, MapPin, Phone, Mail, Calendar, Star, List, LayoutGrid } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Mock client data
@@ -87,6 +87,7 @@ export default function Clients() {
   const [clientPriorities, setClientPriorities] = useState<Record<string, string>>(
     Object.fromEntries(mockClients.map(client => [client.id, client.priority]))
   );
+  const [view, setView] = useState<'grid' | 'list'>("grid");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -138,86 +139,168 @@ export default function Clients() {
         <Button variant="professional">
           Add Client
         </Button>
+        <div className="flex gap-2 ml-auto">
+          <Button
+            variant={view === 'grid' ? 'professional' : 'outline'}
+            size="icon"
+            onClick={() => setView('grid')}
+            aria-label="Grid view"
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </Button>
+          <Button
+            variant={view === 'list' ? 'professional' : 'outline'}
+            size="icon"
+            onClick={() => setView('list')}
+            aria-label="List view"
+          >
+            <List className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
-      {/* Client Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredClients.map((client, index) => (
-          <Card 
-            key={client.id}
-            className="cursor-pointer transition-all duration-200 hover:shadow-hover hover:scale-[1.02] animate-slide-up border-border"
-            style={{ animationDelay: `${index * 0.1}s` }}
-            onClick={() => handleClientClick(client.id)}
-          >
-            <CardHeader className="space-y-3">
-              <div className="flex items-start justify-between">
+      {/* Client Grid/List */}
+      {view === 'grid' ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredClients.map((client, index) => (
+            <Card 
+              key={client.id}
+              className="cursor-pointer transition-all duration-200 hover:shadow-hover hover:scale-[1.02] animate-slide-up border-border"
+              style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => handleClientClick(client.id)}
+            >
+              <CardHeader className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-foreground">
+                      {client.name}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-1 mt-1">
+                      <MapPin className="h-3 w-3" />
+                      {client.location}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-warning text-warning" />
+                    <span className="text-sm font-medium">{client.rating}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <Badge variant={getStatusColor(client.status) as any}>
+                    {client.status}
+                  </Badge>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={clientPriorities[client.id]}
+                      onValueChange={(value) => handlePriorityChange(client.id, value)}
+                    >
+                      <SelectTrigger className="w-32 h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Low">Low Priority</SelectItem>
+                        <SelectItem value="Medium">Medium Priority</SelectItem>
+                        <SelectItem value="High">High Priority</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    {client.email}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-4 w-4" />
+                    {client.phone}
+                  </div>
+                </div>
                 <div>
-                  <CardTitle className="text-lg font-semibold text-foreground">
-                    {client.name}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-1 mt-1">
-                    <MapPin className="h-3 w-3" />
+                  <p className="text-sm font-medium text-foreground mb-1">Preferences</p>
+                  <p className="text-sm text-muted-foreground">{client.preferences}</p>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    Last contact: {new Date(client.lastContact).toLocaleDateString()}
+                  </div>
+                  <Badge variant="outline">
+                    {client.matchedProperties} matches
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filteredClients.map((client, index) => (
+            <Card
+              key={client.id}
+              className="flex flex-row items-center gap-4 p-4 cursor-pointer hover:shadow-hover animate-slide-up border-border"
+              style={{ animationDelay: `${index * 0.05}s` }}
+              onClick={() => handleClientClick(client.id)}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="font-semibold text-lg truncate">{client.name}</span>
+                    <Badge variant={getStatusColor(client.status) as any}>{client.status}</Badge>
+                    <Badge variant={getPriorityColor(client.priority) as any}>{client.priority}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 fill-warning text-warning" />
+                    <span className="text-sm font-medium">{client.rating}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
                     {client.location}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-warning text-warning" />
-                  <span className="text-sm font-medium">{client.rating}</span>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 items-center">
-                <Badge variant={getStatusColor(client.status) as any}>
-                  {client.status}
-                </Badge>
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Select
-                    value={clientPriorities[client.id]}
-                    onValueChange={(value) => handlePriorityChange(client.id, value)}
-                  >
-                    <SelectTrigger className="w-32 h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Low">Low Priority</SelectItem>
-                      <SelectItem value="Medium">Medium Priority</SelectItem>
-                      <SelectItem value="High">High Priority</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Mail className="h-4 w-4" />
+                    {client.email}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Phone className="h-4 w-4" />
+                    {client.phone}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Last contact: {new Date(client.lastContact).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">Preferences:</span>
+                    {client.preferences}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">Matches:</span>
+                    {client.matchedProperties}
+                  </div>
                 </div>
               </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  {client.email}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4" />
-                  {client.phone}
-                </div>
+              <div onClick={e => e.stopPropagation()} className="flex flex-col gap-2 min-w-[120px]">
+                <Select
+                  value={clientPriorities[client.id]}
+                  onValueChange={(value) => handlePriorityChange(client.id, value)}
+                >
+                  <SelectTrigger className="w-28 h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low Priority</SelectItem>
+                    <SelectItem value="Medium">Medium Priority</SelectItem>
+                    <SelectItem value="High">High Priority</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <div>
-                <p className="text-sm font-medium text-foreground mb-1">Preferences</p>
-                <p className="text-sm text-muted-foreground">{client.preferences}</p>
-              </div>
-              
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  Last contact: {new Date(client.lastContact).toLocaleDateString()}
-                </div>
-                <Badge variant="outline">
-                  {client.matchedProperties} matches
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Empty State */}
       {filteredClients.length === 0 && (

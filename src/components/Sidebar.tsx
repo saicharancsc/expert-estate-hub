@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+
 const navigationItems = [
   {
     name: "Clients",
@@ -41,12 +42,12 @@ export function Sidebar() {
     <div className="flex h-screen w-72 flex-col bg-gradient-subtle border-r border-border shadow-card">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-8 border-b border-border">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary shadow-card">
-          <Building2 className="h-6 w-6 text-primary-foreground" />
+        <div className="flex h-10 w-10 items-center justify-center bg-white overflow-hidden">
+          <img src="/relaiLogo.png" alt="Relai Logo" className="h-10 w-10 object-contain" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-foreground">RealEstate Pro</h1>
-          <p className="text-sm text-muted-foreground">Expert Dashboard</p>
+          <h1 className="text-lg font-bold text-foreground">Expert Dashboard</h1>
+          {/* <p className="text-sm text-muted-foreground">Expert Dashboard</p> */}
         </div>
       </div>
 

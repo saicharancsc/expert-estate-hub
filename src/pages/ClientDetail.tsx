@@ -97,6 +97,7 @@ export default function ClientDetail() {
   const [siteVisitDate, setSiteVisitDate] = useState("");
   const [siteVisitTime, setSiteVisitTime] = useState("");
   const [siteVisitNotes, setSiteVisitNotes] = useState("");
+  const [siteVisits, setSiteVisits] = useState<any[]>([]); // <-- Add this after other useState hooks
   const { toast } = useToast();
   
   const client = mockClientData[id as keyof typeof mockClientData];
@@ -150,6 +151,17 @@ export default function ClientDetail() {
       });
       return;
     }
+
+    // Add new site visit to state
+    setSiteVisits(prev => [
+      ...prev,
+      {
+        property: siteVisitProperty,
+        date: siteVisitDate,
+        time: siteVisitTime,
+        notes: siteVisitNotes,
+      }
+    ]);
 
     toast({
       title: "Site Visit Scheduled",
@@ -211,6 +223,39 @@ export default function ClientDetail() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">Last contact: {new Date(client.lastContact).toLocaleDateString()}</span>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Site Visits Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Site Visits</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {siteVisits.length === 0 ? (
+                <div className="text-center text-muted-foreground py-6">
+                  <CalendarDays className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No site visits scheduled yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {siteVisits.map((visit, idx) => (
+                    <Card key={idx} className="bg-muted/50">
+                      <CardContent className="p-3 flex flex-col gap-1">
+                        <div className="font-semibold">{visit.property?.title}</div>
+                        <div className="text-xs text-muted-foreground">{visit.property?.address}</div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4" />
+                          {visit.date} at {visit.time}
+                        </div>
+                        {visit.notes && (
+                          <div className="text-xs text-muted-foreground italic">{visit.notes}</div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

@@ -7,58 +7,92 @@ import { Calendar as CalendarIcon, Clock, MapPin, User, Video, Phone, MessageSqu
 
 type FilterPeriod = "today" | "tomorrow" | "week" | "month";
 
+const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(today.getDate() + 1);
+const thisWeekDate = new Date(today);
+thisWeekDate.setDate(today.getDate() + 3);
+const thisMonthDate = new Date(today);
+thisMonthDate.setDate(today.getDate() + 10);
+
 const mockMeetings = [
   {
     id: "m1",
     clientId: "1",
     clientName: "Sarah Johnson",
-    date: "2024-01-15",
-    time: "10:00 AM",
-    type: "Property Tour",
-    location: "Downtown Seattle",
+    date: today.toISOString().split('T')[0],
+    time: "09:00 AM",
+    type: "Site Visit",
+    location: "123 Pine St, Seattle",
     status: "confirmed",
-    description: "Tour modern condos in downtown area",
-    duration: "2 hours",
+    description: "On-site property tour for new listing.",
+    duration: "1 hour",
     meetingType: "in-person"
   },
   {
-    id: "m2", 
+    id: "m2",
     clientId: "2",
     clientName: "Michael Chen",
-    date: "2024-01-15",
-    time: "2:30 PM", 
-    type: "Initial Consultation",
-    location: "Virtual Meeting",
-    status: "confirmed",
-    description: "Discuss family home requirements and budget",
-    duration: "1 hour",
+    date: today.toISOString().split('T')[0],
+    time: "11:30 AM",
+    type: "Virtual Consultation",
+    location: "Zoom",
+    status: "pending",
+    description: "Discuss investment opportunities and financing.",
+    duration: "45 minutes",
     meetingType: "virtual"
   },
   {
     id: "m3",
-    clientId: "3", 
+    clientId: "3",
     clientName: "Emily Rodriguez",
-    date: "2024-01-16",
-    time: "9:00 AM",
+    date: tomorrow.toISOString().split('T')[0],
+    time: "02:00 PM",
     type: "Contract Review",
     location: "Office",
-    status: "pending",
-    description: "Review offer documents for historic property",
-    duration: "1.5 hours",
+    status: "confirmed",
+    description: "Review and sign purchase agreement.",
+    duration: "30 minutes",
     meetingType: "in-person"
   },
   {
     id: "m4",
-    clientId: "1",
-    clientName: "Sarah Johnson", 
-    date: "2024-01-18",
-    time: "11:00 AM",
-    type: "Follow-up Call",
+    clientId: "4",
+    clientName: "David Kim",
+    date: thisWeekDate.toISOString().split('T')[0],
+    time: "04:00 PM",
+    type: "Phone Follow-up",
     location: "Phone Call",
-    status: "confirmed",
-    description: "Discuss feedback from recent property tours",
-    duration: "30 minutes",
+    status: "cancelled",
+    description: "Check in on property search progress.",
+    duration: "20 minutes",
     meetingType: "phone"
+  },
+  {
+    id: "m5",
+    clientId: "1",
+    clientName: "Sarah Johnson",
+    date: thisMonthDate.toISOString().split('T')[0],
+    time: "10:15 AM",
+    type: "Inspection",
+    location: "789 Second St, Seattle",
+    status: "pending",
+    description: "Meet inspector at property for evaluation.",
+    duration: "1.5 hours",
+    meetingType: "in-person"
+  },
+  {
+    id: "m6",
+    clientId: "5",
+    clientName: "Priya Patel",
+    date: thisWeekDate.toISOString().split('T')[0],
+    time: "03:30 PM",
+    type: "Virtual Tour",
+    location: "Google Meet",
+    status: "confirmed",
+    description: "Remote walkthrough of new apartment.",
+    duration: "1 hour",
+    meetingType: "virtual"
   }
 ];
 
@@ -242,91 +276,52 @@ export default function Calendar() {
             <Button variant="professional">Schedule Your First Meeting</Button>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {filteredMeetings.map((meeting, index) => {
-              const MeetingIcon = getMeetingIcon(meeting.meetingType);
-              
-              return (
-                <Card 
-                  key={meeting.id}
-                  className="cursor-pointer hover:shadow-hover transition-all duration-200 animate-slide-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                  onClick={() => handleMeetingClick(meeting.clientId)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      {/* Time & Type */}
-                      <div className="flex-shrink-0 text-center">
-                        <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center mb-2">
-                          <MeetingIcon className="h-6 w-6 text-primary-foreground" />
-                        </div>
-                        <p className="text-sm font-medium">{meeting.time}</p>
-                        <p className="text-xs text-muted-foreground">{meeting.duration}</p>
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border">
+                <div className="grid grid-cols-6 gap-4 px-6 py-3 bg-muted font-semibold text-muted-foreground text-sm">
+                  <div>Time</div>
+                  <div>Type</div>
+                  <div>Client</div>
+                  <div>Location</div>
+                  <div>Date</div>
+                  <div>Status</div>
+                </div>
+                {filteredMeetings.map((meeting, index) => {
+                  const MeetingIcon = getMeetingIcon(meeting.meetingType);
+                  return (
+                    <div
+                      key={meeting.id}
+                      className="grid grid-cols-6 gap-4 items-center px-6 py-4 hover:bg-accent/30 cursor-pointer transition-all"
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                      onClick={() => handleMeetingClick(meeting.clientId)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{meeting.time}</span>
+                        <span className="text-xs text-muted-foreground">{meeting.duration}</span>
                       </div>
-                      
-                      {/* Meeting Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold text-lg">{meeting.type}</h3>
-                            <p className="text-muted-foreground">with {meeting.clientName}</p>
-                          </div>
-                          <Badge variant={getStatusColor(meeting.status) as any}>
-                            {meeting.status}
-                          </Badge>
-                        </div>
-                        
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {meeting.description}
-                        </p>
-                        
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {meeting.location}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <CalendarIcon className="h-4 w-4" />
-                            {new Date(meeting.date).toLocaleDateString()}
-                          </div>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="professional"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLaunchMeeting(meeting.id, meeting.meetingType);
-                            }}
-                          >
-                            {meeting.meetingType === "virtual" && <Video className="h-4 w-4 mr-2" />}
-                            {meeting.meetingType === "phone" && <Phone className="h-4 w-4 mr-2" />}
-                            {meeting.meetingType === "in-person" && <User className="h-4 w-4 mr-2" />}
-                            Launch Meeting
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMeetingClick(meeting.clientId);
-                            }}
-                          >
-                            View Client
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            Reschedule
-                          </Button>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <MeetingIcon className="h-4 w-4" />
+                        <span>{meeting.type}</span>
+                      </div>
+                      <div>{meeting.clientName}</div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span>{meeting.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="h-4 w-4" />
+                        <span>{new Date(meeting.date).toLocaleDateString()}</span>
+                      </div>
+                      <div>
+                        <Badge variant={getStatusColor(meeting.status) as any}>{meeting.status}</Badge>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
