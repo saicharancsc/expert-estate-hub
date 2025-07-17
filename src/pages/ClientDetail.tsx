@@ -32,7 +32,6 @@ const mockClientData = {
     propertyConfiguration: "2-3 bedrooms, 2+ bathrooms, parking included",
     preferredLocations: "Downtown Seattle, Belltown, Capitol Hill",
     lastContact: "2024-01-15",
-    rating: 4.8,
     notes: "Looking for modern amenities, prefers high-rise buildings with city views.",
     conversations: [
       { date: "2024-01-15", type: "call", summary: "Discussed budget increase and timeline" },
@@ -195,10 +194,6 @@ export default function ClientDetail() {
             <Badge variant="default">{client.status}</Badge>
             <Badge variant="destructive">{client.priority} Priority</Badge>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Star className="h-5 w-5 fill-warning text-warning" />
-          <span className="font-semibold">{client.rating}</span>
         </div>
       </div>
 

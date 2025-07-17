@@ -16,12 +16,10 @@ const mockClients = [
     email: "sarah.johnson@email.com",
     phone: "(555) 123-4567",
     location: "Downtown Seattle",
-    status: "Active",
     priority: "High",
     preferences: "Modern condos, 2-3 bedrooms",
     lastContact: "2024-01-15",
-    matchedProperties: 5,
-    rating: 4.8
+    matchedProperties: 5
   },
   {
     id: "2",
@@ -29,12 +27,10 @@ const mockClients = [
     email: "m.chen@email.com",
     phone: "(555) 234-5678",
     location: "Bellevue",
-    status: "Prospect",
     priority: "Medium",
     preferences: "Family homes, good schools",
     lastContact: "2024-01-12",
-    matchedProperties: 3,
-    rating: 4.5
+    matchedProperties: 3
   },
   {
     id: "3",
@@ -42,12 +38,10 @@ const mockClients = [
     email: "emily.r@email.com",
     phone: "(555) 345-6789",
     location: "Capitol Hill",
-    status: "Active",
     priority: "High",
     preferences: "Historic buildings, walkable",
     lastContact: "2024-01-14",
-    matchedProperties: 7,
-    rating: 4.9
+    matchedProperties: 7
   },
   {
     id: "4",
@@ -55,23 +49,12 @@ const mockClients = [
     email: "david.kim@email.com",
     phone: "(555) 456-7890",
     location: "Fremont",
-    status: "Inactive",
     priority: "Low",
     preferences: "Fixer-uppers, investment",
     lastContact: "2024-01-08",
-    matchedProperties: 2,
-    rating: 4.2
+    matchedProperties: 2
   }
 ];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Active": return "success";
-    case "Prospect": return "warning";
-    case "Inactive": return "destructive";
-    default: return "secondary";
-  }
-};
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -80,6 +63,13 @@ const getPriorityColor = (priority: string) => {
     case "Low": return "secondary";
     default: return "secondary";
   }
+};
+
+// Helper to get progress stage for each client (mock logic)
+const getClientProgress = (clientId: string) => {
+  if (clientId === "1") return "Site Visit";
+  if (clientId === "2") return "Short List";
+  return "Meeting";
 };
 
 export default function Clients() {
@@ -180,15 +170,11 @@ export default function Clients() {
                       {client.location}
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-warning text-warning" />
-                    <span className="text-sm font-medium">{client.rating}</span>
-                  </div>
                 </div>
                 <div className="flex gap-2 items-center">
-                  <Badge variant={getStatusColor(client.status) as any}>
-                    {client.status}
-                  </Badge>
+                  <Button variant="accent" size="sm" className="pointer-events-none cursor-default h-7 px-3 text-xs font-normal">
+                    {getClientProgress(client.id)}
+                  </Button>
                   <div onClick={(e) => e.stopPropagation()}>
                     <Select
                       value={clientPriorities[client.id]}
@@ -246,13 +232,11 @@ export default function Clients() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="font-semibold text-lg truncate">{client.name}</span>
-                    <Badge variant={getStatusColor(client.status) as any}>{client.status}</Badge>
+                    <Button variant="accent" size="sm" className="pointer-events-none cursor-default h-7 px-3 text-xs font-normal">
+                      {getClientProgress(client.id)}
+                    </Button>
                     <Badge variant={getPriorityColor(client.priority) as any}>{client.priority}</Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 fill-warning text-warning" />
-                    <span className="text-sm font-medium">{client.rating}</span>
+                    <span className="font-semibold text-lg truncate">{client.name}</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">

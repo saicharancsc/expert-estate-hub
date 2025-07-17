@@ -100,12 +100,12 @@ export function Sidebar() {
           <span>Logout</span>
         </Button>
         
-        <div className="rounded-lg bg-accent/10 p-3">
-          <p className="text-xs font-medium text-accent">Professional Edition</p>
+        {/* <div className="rounded-lg bg-accent/10 p-3"> */}
+          {/* <p className="text-xs font-medium text-accent">Professional Edition</p>
           <p className="text-xs text-muted-foreground mt-1">
             Advanced real estate management tools
-          </p>
-        </div>
+          </p> */}
+        {/* </div> */}
       </div>
     </div>
   );
