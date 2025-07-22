@@ -42,8 +42,8 @@ export function Sidebar() {
     <div className="flex h-screen w-72 flex-col bg-gradient-subtle border-r border-border shadow-card">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-8 border-b border-border">
-        <div className="flex h-10 w-10 items-center justify-center bg-white overflow-hidden">
-          <img src="/relaiLogo.png" alt="Relai Logo" className="h-10 w-10 object-contain" />
+        <div className="flex h-20 w-20 items-center justify-center bg-white overflow-hidden">
+          <img src="/relaiLogo.png" alt="Relai Logo" className="h-20 w-20 object-contain" />
         </div>
         <div>
           <h1 className="text-lg font-bold text-foreground">Expert Dashboard</h1>

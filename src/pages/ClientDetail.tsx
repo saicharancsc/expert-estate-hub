@@ -34,9 +34,9 @@ const mockClientData = {
     lastContact: "2024-01-15",
     notes: "Looking for modern amenities, prefers high-rise buildings with city views.",
     conversations: [
-      { date: "2024-01-15", type: "call", summary: "Discussed budget increase and timeline" },
-      { date: "2024-01-12", type: "email", summary: "Sent 3 new property matches" },
-      { date: "2024-01-10", type: "meeting", summary: "Toured downtown condos" },
+      { date: "2024-01-15", type: "call(Bot)", summary: "Discussed budget increase and timeline" },
+      { date: "2024-01-12", type: "WhatsApp Bot", summary: "Sent 3 new property matches" },
+      { date: "2024-01-10", type: "WebBot", summary: "Toured downtown condos" },
       { date: "2024-01-08", type: "call", summary: "Initial consultation and needs assessment" }
     ],
     matchedProperties: [
@@ -97,6 +97,12 @@ export default function ClientDetail() {
   const [siteVisitTime, setSiteVisitTime] = useState("");
   const [siteVisitNotes, setSiteVisitNotes] = useState("");
   const [siteVisits, setSiteVisits] = useState<any[]>([]); // <-- Add this after other useState hooks
+  const [openConversation, setOpenConversation] = useState<number | null>(null);
+  const [meetingDialog, setMeetingDialog] = useState(false);
+  const [meetingDate, setMeetingDate] = useState("");
+  const [meetingTime, setMeetingTime] = useState("");
+  const [meetingNotes, setMeetingNotes] = useState("");
+  const [meetings, setMeetings] = useState<any[]>([]);
   const { toast } = useToast();
   
   const client = mockClientData[id as keyof typeof mockClientData];
@@ -173,6 +179,35 @@ export default function ClientDetail() {
     setSiteVisitDate("");
     setSiteVisitTime("");
     setSiteVisitNotes("");
+  };
+
+  const handleScheduleMeeting = () => {
+    if (!meetingDate || !meetingTime) {
+      toast({
+        title: "Missing Information",
+        description: "Please select both date and time for the meeting.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setMeetings(prev => [
+      ...prev,
+      {
+        clientId: client.id,
+        clientName: client.name,
+        date: meetingDate,
+        time: meetingTime,
+        notes: meetingNotes,
+      }
+    ]);
+    toast({
+      title: "Meeting Scheduled",
+      description: `Meeting for ${client.name} scheduled for ${meetingDate} at ${meetingTime}.`,
+    });
+    setMeetingDialog(false);
+    setMeetingDate("");
+    setMeetingTime("");
+    setMeetingNotes("");
   };
 
   return (
@@ -293,7 +328,7 @@ export default function ClientDetail() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="professional" className="w-full">
+              <Button variant="professional" className="w-full" onClick={() => setMeetingDialog(true)}>
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Schedule Meeting
               </Button>
@@ -330,6 +365,7 @@ export default function ClientDetail() {
                     key={property.id}
                     className="cursor-pointer hover:shadow-hover transition-all duration-200 animate-slide-up"
                     style={{ animationDelay: `${index * 0.1}s` }}
+                    onClick={() => setSelectedProperty(property)}
                   >
                     <div className="relative">
                       <div className="h-48 bg-muted rounded-t-lg flex items-center justify-center">
@@ -372,13 +408,13 @@ export default function ClientDetail() {
                               variant="outline" 
                               size="sm" 
                               className="flex-1"
-                              onClick={() => setSelectedProperty(property)}
+                              tabIndex={-1}
                             >
                               <Eye className="h-4 w-4 mr-2" />
                               View
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-4xl">
                             <DialogHeader>
                               <DialogTitle>{property.title}</DialogTitle>
                             </DialogHeader>
@@ -403,6 +439,7 @@ export default function ClientDetail() {
                                   <p className="text-sm font-medium">Bathrooms</p>
                                   <p className="text-sm text-muted-foreground">{property.bathrooms}</p>
                                 </div>
+                                {/* Add more property details here if needed */}
                               </div>
                             </div>
                           </DialogContent>
@@ -414,14 +451,6 @@ export default function ClientDetail() {
                         >
                           <Bookmark className="h-4 w-4 mr-1" />
                           Short List
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleSiteVisit(property)}
-                        >
-                          <CalendarDays className="h-4 w-4 mr-1" />
-                          Site Visit
                         </Button>
                       </div>
                     </CardContent>
@@ -562,24 +591,39 @@ export default function ClientDetail() {
               
               <div className="space-y-3">
                 {client.conversations.map((conversation, index) => (
-                  <Card key={index} className="animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                            <MessageSquare className="h-4 w-4 text-primary-foreground" />
+                  <div key={index}>
+                    <Card
+                      className="animate-slide-up cursor-pointer"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                      onClick={() => setOpenConversation(openConversation === index ? null : index)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                              <MessageSquare className="h-4 w-4 text-primary-foreground" />
+                            </div>
+                            <div>
+                              <p className="font-medium capitalize">{conversation.type}</p>
+                              <p className="text-sm text-muted-foreground">{conversation.summary}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium capitalize">{conversation.type}</p>
-                            <p className="text-sm text-muted-foreground">{conversation.summary}</p>
-                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(conversation.date).toLocaleDateString()}
+                          </span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(conversation.date).toLocaleDateString()}
-                        </span>
+                      </CardContent>
+                    </Card>
+                    {openConversation === index && (
+                      <div className="bg-muted border border-border rounded-b-lg p-4 text-sm animate-fade-in">
+                        <strong>Conversation Summary:</strong>
+                        <div className="mt-2 text-muted-foreground">
+                          {conversation.summary}
+                        </div>
+                        {/* You can add more detailed bot/client messages here if available */}
                       </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
                 ))}
               </div>
             </TabsContent>
@@ -613,12 +657,62 @@ export default function ClientDetail() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="visit-time">Time</Label>
-                <Input
+                <select
                   id="visit-time"
-                  type="time"
                   value={siteVisitTime}
                   onChange={(e) => setSiteVisitTime(e.target.value)}
-                />
+                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-accent focus:border-accent"
+                >
+                  <option value="">--:--</option>
+                  <option value="12:00 AM">12:00 AM</option>
+                  <option value="12:30 AM">12:30 AM</option>
+                  <option value="1:00 AM">1:00 AM</option>
+                  <option value="1:30 AM">1:30 AM</option>
+                  <option value="2:00 AM">2:00 AM</option>
+                  <option value="2:30 AM">2:30 AM</option>
+                  <option value="3:00 AM">3:00 AM</option>
+                  <option value="3:30 AM">3:30 AM</option>
+                  <option value="4:00 AM">4:00 AM</option>
+                  <option value="4:30 AM">4:30 AM</option>
+                  <option value="5:00 AM">5:00 AM</option>
+                  <option value="5:30 AM">5:30 AM</option>
+                  <option value="6:00 AM">6:00 AM</option>
+                  <option value="6:30 AM">6:30 AM</option>
+                  <option value="7:00 AM">7:00 AM</option>
+                  <option value="7:30 AM">7:30 AM</option>
+                  <option value="8:00 AM">8:00 AM</option>
+                  <option value="8:30 AM">8:30 AM</option>
+                  <option value="9:00 AM">9:00 AM</option>
+                  <option value="9:30 AM">9:30 AM</option>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="10:30 AM">10:30 AM</option>
+                  <option value="11:00 AM">11:00 AM</option>
+                  <option value="11:30 AM">11:30 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="12:30 PM">12:30 PM</option>
+                  <option value="1:00 PM">1:00 PM</option>
+                  <option value="1:30 PM">1:30 PM</option>
+                  <option value="2:00 PM">2:00 PM</option>
+                  <option value="2:30 PM">2:30 PM</option>
+                  <option value="3:00 PM">3:00 PM</option>
+                  <option value="3:30 PM">3:30 PM</option>
+                  <option value="4:00 PM">4:00 PM</option>
+                  <option value="4:30 PM">4:30 PM</option>
+                  <option value="5:00 PM">5:00 PM</option>
+                  <option value="5:30 PM">5:30 PM</option>
+                  <option value="6:00 PM">6:00 PM</option>
+                  <option value="6:30 PM">6:30 PM</option>
+                  <option value="7:00 PM">7:00 PM</option>
+                  <option value="7:30 PM">7:30 PM</option>
+                  <option value="8:00 PM">8:00 PM</option>
+                  <option value="8:30 PM">8:30 PM</option>
+                  <option value="9:00 PM">9:00 PM</option>
+                  <option value="9:30 PM">9:30 PM</option>
+                  <option value="10:00 PM">10:00 PM</option>
+                  <option value="10:30 PM">10:30 PM</option>
+                  <option value="11:00 PM">11:00 PM</option>
+                  <option value="11:30 PM">11:30 PM</option>
+                </select>
               </div>
             </div>
             
@@ -640,6 +734,111 @@ export default function ClientDetail() {
               <Button onClick={scheduleSiteVisit}>
                 <Clock className="h-4 w-4 mr-2" />
                 Schedule Visit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Meeting Scheduling Dialog */}
+      <Dialog open={meetingDialog} onOpenChange={setMeetingDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Schedule Meeting</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-2">{client.name}</h4>
+              <p className="text-sm text-muted-foreground">{client.email}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="meeting-date">Date</Label>
+                <Input
+                  id="meeting-date"
+                  type="date"
+                  value={meetingDate}
+                  onChange={(e) => setMeetingDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="meeting-time">Time</Label>
+                <select
+                  id="meeting-time"
+                  value={meetingTime}
+                  onChange={(e) => setMeetingTime(e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-accent focus:border-accent"
+                >
+                  <option value="">--:--</option>
+                  <option value="12:00 AM">12:00 AM</option>
+                  <option value="12:30 AM">12:30 AM</option>
+                  <option value="1:00 AM">1:00 AM</option>
+                  <option value="1:30 AM">1:30 AM</option>
+                  <option value="2:00 AM">2:00 AM</option>
+                  <option value="2:30 AM">2:30 AM</option>
+                  <option value="3:00 AM">3:00 AM</option>
+                  <option value="3:30 AM">3:30 AM</option>
+                  <option value="4:00 AM">4:00 AM</option>
+                  <option value="4:30 AM">4:30 AM</option>
+                  <option value="5:00 AM">5:00 AM</option>
+                  <option value="5:30 AM">5:30 AM</option>
+                  <option value="6:00 AM">6:00 AM</option>
+                  <option value="6:30 AM">6:30 AM</option>
+                  <option value="7:00 AM">7:00 AM</option>
+                  <option value="7:30 AM">7:30 AM</option>
+                  <option value="8:00 AM">8:00 AM</option>
+                  <option value="8:30 AM">8:30 AM</option>
+                  <option value="9:00 AM">9:00 AM</option>
+                  <option value="9:30 AM">9:30 AM</option>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="10:30 AM">10:30 AM</option>
+                  <option value="11:00 AM">11:00 AM</option>
+                  <option value="11:30 AM">11:30 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="12:30 PM">12:30 PM</option>
+                  <option value="1:00 PM">1:00 PM</option>
+                  <option value="1:30 PM">1:30 PM</option>
+                  <option value="2:00 PM">2:00 PM</option>
+                  <option value="2:30 PM">2:30 PM</option>
+                  <option value="3:00 PM">3:00 PM</option>
+                  <option value="3:30 PM">3:30 PM</option>
+                  <option value="4:00 PM">4:00 PM</option>
+                  <option value="4:30 PM">4:30 PM</option>
+                  <option value="5:00 PM">5:00 PM</option>
+                  <option value="5:30 PM">5:30 PM</option>
+                  <option value="6:00 PM">6:00 PM</option>
+                  <option value="6:30 PM">6:30 PM</option>
+                  <option value="7:00 PM">7:00 PM</option>
+                  <option value="7:30 PM">7:30 PM</option>
+                  <option value="8:00 PM">8:00 PM</option>
+                  <option value="8:30 PM">8:30 PM</option>
+                  <option value="9:00 PM">9:00 PM</option>
+                  <option value="9:30 PM">9:30 PM</option>
+                  <option value="10:00 PM">10:00 PM</option>
+                  <option value="10:30 PM">10:30 PM</option>
+                  <option value="11:00 PM">11:00 PM</option>
+                  <option value="11:30 PM">11:30 PM</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="meeting-notes">Notes (Optional)</Label>
+              <Textarea
+                id="meeting-notes"
+                placeholder="Add any special requirements or notes for the meeting..."
+                value={meetingNotes}
+                onChange={(e) => setMeetingNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setMeetingDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleScheduleMeeting}>
+                <Clock className="h-4 w-4 mr-2" />
+                Schedule Meeting
               </Button>
             </div>
           </div>

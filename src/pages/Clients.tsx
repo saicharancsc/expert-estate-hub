@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,24 @@ export default function Clients() {
   const [view, setView] = useState<'grid' | 'list'>("grid");
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Add state to track shortlisted counts for each client (simulate for demo)
+  const [shortlistedCounts, setShortlistedCounts] = useState<Record<string, number>>(() => {
+    const stored = localStorage.getItem("shortlistedCounts");
+    return stored ? JSON.parse(stored) : { "1": 0, "2": 0, "3": 0, "4": 0 };
+  });
+
+  useEffect(() => {
+    localStorage.setItem("shortlistedCounts", JSON.stringify(shortlistedCounts));
+  }, [shortlistedCounts]);
+
+  // Simulate moving a property to shortlist for demo (in real app, this would be triggered by an action)
+  const handleShortListDemo = (clientId: string) => {
+    setShortlistedCounts(prev => ({
+      ...prev,
+      [clientId]: (prev[clientId] || 0) + 1
+    }));
+  };
 
   const filteredClients = mockClients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -175,6 +193,7 @@ export default function Clients() {
                   <Button variant="accent" size="sm" className="pointer-events-none cursor-default h-7 px-3 text-xs font-normal">
                     {getClientProgress(client.id)}
                   </Button>
+                  <Badge variant={getPriorityColor(clientPriorities[client.id]) as any}>{clientPriorities[client.id]} Priority</Badge>
                   <div onClick={(e) => e.stopPropagation()}>
                     <Select
                       value={clientPriorities[client.id]}
@@ -213,7 +232,7 @@ export default function Clients() {
                     Last contact: {new Date(client.lastContact).toLocaleDateString()}
                   </div>
                   <Badge variant="outline">
-                    {client.matchedProperties} matches
+                    {shortlistedCounts[client.id] || 0} shortlisted, {client.matchedProperties} matched
                   </Badge>
                 </div>
               </CardContent>
@@ -235,7 +254,7 @@ export default function Clients() {
                     <Button variant="accent" size="sm" className="pointer-events-none cursor-default h-7 px-3 text-xs font-normal">
                       {getClientProgress(client.id)}
                     </Button>
-                    <Badge variant={getPriorityColor(client.priority) as any}>{client.priority}</Badge>
+                    <Badge variant={getPriorityColor(clientPriorities[client.id]) as any}>{clientPriorities[client.id]}</Badge>
                     <span className="font-semibold text-lg truncate">{client.name}</span>
                   </div>
                 </div>
@@ -280,6 +299,9 @@ export default function Clients() {
                     <SelectItem value="High">High Priority</SelectItem>
                   </SelectContent>
                 </Select>
+                <Badge variant="outline">
+                  {shortlistedCounts[client.id] || 0} shortlisted, {client.matchedProperties} matched
+                </Badge>
               </div>
             </Card>
           ))}
