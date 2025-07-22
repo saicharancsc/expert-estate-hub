@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarIcon, Clock, MapPin, User, Video, Phone, MessageSquare, ChevronDown } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
 
 type FilterPeriod = "today" | "tomorrow" | "week" | "month";
 
@@ -103,15 +106,6 @@ const filterButtons = [
   { id: "month", label: "This Month", period: "month" as FilterPeriod }
 ];
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "confirmed": return "default";
-    case "pending": return "secondary";
-    case "cancelled": return "destructive";
-    default: return "outline";
-  }
-};
-
 const getMeetingIcon = (type: string) => {
   switch (type) {
     case "virtual": return Video;
@@ -121,16 +115,30 @@ const getMeetingIcon = (type: string) => {
 };
 
 export default function Calendar() {
+  const [meetings, setMeetings] = useState(mockMeetings); // Use state for meetings
   const [activeFilter, setActiveFilter] = useState<FilterPeriod>("today");
   const [meetingTypeFilter, setMeetingTypeFilter] = useState("all");
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const filterMeetings = (period: FilterPeriod) => {
+  const handleStatusChange = (meetingId: string, newStatus: string) => {
+    setMeetings(prevMeetings =>
+      prevMeetings.map(m =>
+        m.id === meetingId ? { ...m, status: newStatus } : m
+      )
+    );
+    toast({
+      title: "Status Updated",
+      description: `Meeting status changed to ${newStatus}.`,
+    });
+  };
+
+  const filterMeetingsByPeriod = (period: FilterPeriod) => {
     const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
     
-    return mockMeetings.filter(meeting => {
+    return meetings.filter(meeting => { // Filter from state
       const meetingDate = new Date(meeting.date);
       
       switch (period) {
@@ -153,20 +161,15 @@ export default function Calendar() {
     });
   };
 
-  const filteredMeetings = filterMeetings(activeFilter).filter(meeting => {
+  const filteredMeetings = filterMeetingsByPeriod(activeFilter).filter(meeting => {
     if (meetingTypeFilter === "all") return true;
-    if (meetingTypeFilter === "propertyvisits") return meeting.type.toLowerCase().includes("visit");
-    if (meetingTypeFilter === "meetings") return meeting.type.toLowerCase().includes("meeting") || meeting.type.toLowerCase().includes("consultation") || meeting.type.toLowerCase().includes("review") || meeting.type.toLowerCase().includes("tour") || meeting.type.toLowerCase().includes("follow-up") || meeting.type.toLowerCase().includes("inspection");
+    if (meetingTypeFilter === "propertyvisits") return meeting.type.toLowerCase().includes("visit") || meeting.type.toLowerCase().includes("tour") || meeting.type.toLowerCase().includes("inspection");
+    if (meetingTypeFilter === "meetings") return meeting.type.toLowerCase().includes("meeting") || meeting.type.toLowerCase().includes("consultation") || meeting.type.toLowerCase().includes("review") || meeting.type.toLowerCase().includes("follow-up");
     return true;
   });
 
   const handleMeetingClick = (clientId: string) => {
     navigate(`/clients/${clientId}`);
-  };
-
-  const handleLaunchMeeting = (meetingId: string, type: string) => {
-    // Placeholder for meeting launch functionality
-    console.log(`Launching ${type} meeting ${meetingId}`);
   };
 
   return (
@@ -194,7 +197,7 @@ export default function Calendar() {
       </div>
 
       {/* Meeting Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+       <div className="grid gap-4 md:grid-cols-4">
         <Card className="animate-slide-up">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -273,8 +276,8 @@ export default function Calendar() {
                 onChange={e => setMeetingTypeFilter(e.target.value)}
               >
                 <option value="all">ALL</option>
-                <option value="propertyvisits">Property Visits</option>
-                <option value="meetings">Meetings</option>
+                <option value="propertyvisits">Property Related</option>
+                <option value="meetings">Consultations</option>
               </select>
               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
@@ -319,7 +322,6 @@ export default function Calendar() {
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{meeting.time}</span>
-                        <span className="text-xs text-muted-foreground">{meeting.duration}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MeetingIcon className="h-4 w-4" />
@@ -327,15 +329,12 @@ export default function Calendar() {
                       </div>
                       <div>{meeting.clientName}</div>
                       <div className="flex items-center gap-1">
-                        {/* <MapPin className="h-4 w-4" /> */}
-                        {/* Only show location text for non-virtual meetings */}
                         {meeting.meetingType !== "virtual" && <span>{meeting.location}</span>}
-                        {/* Add Zoom button for virtual meetings */}
                         {meeting.meetingType === "virtual" && (
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="ml-2"
+                            className="h-8"
                             onClick={e => {
                               e.stopPropagation();
                               window.open("https://zoom.us/j/1234567890", "_blank");
@@ -349,8 +348,21 @@ export default function Calendar() {
                         <CalendarIcon className="h-4 w-4" />
                         <span>{new Date(meeting.date).toLocaleDateString()}</span>
                       </div>
-                      <div>
-                        <Badge variant={getStatusColor(meeting.status) as any}>{meeting.status}</Badge>
+                      {/* --- STATUS DROPDOWN --- */}
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={meeting.status}
+                          onValueChange={(newStatus) => handleStatusChange(meeting.id, newStatus)}
+                        >
+                          <SelectTrigger className="w-[110px] h-8 text-xs capitalize">
+                            <SelectValue placeholder="Set status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   );

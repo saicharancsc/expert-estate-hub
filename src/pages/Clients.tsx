@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Phone, Mail, Calendar, Star, List, LayoutGrid } from "lucide-react";
+import { Search, MapPin, Phone, Mail, Calendar, Star, List, LayoutGrid, Pencil, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { X } from "lucide-react";
 
 // Mock client data
 const mockClients = [
@@ -72,6 +71,7 @@ const getPriorityColor = (priority: string) => {
 const getClientProgress = (clientId: string) => {
   if (clientId === "1") return "Site Visit";
   if (clientId === "2") return "Short List";
+  // All other clients are in "Meeting" stage for demo purposes
   return "Meeting";
 };
 
@@ -85,13 +85,20 @@ export default function Clients() {
   const { toast } = useToast();
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
-  const [siteVisitFilter, setSiteVisitFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null); // Changed from siteVisitFilter
 
   // Add state to track shortlisted counts for each client (simulate for demo)
   const [shortlistedCounts, setShortlistedCounts] = useState<Record<string, number>>(() => {
     const stored = localStorage.getItem("shortlistedCounts");
     return stored ? JSON.parse(stored) : { "1": 0, "2": 0, "3": 0, "4": 0 };
   });
+
+  // Add state to track editing location
+  const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
+  const [locationEdits, setLocationEdits] = useState<Record<string, string>>({});
+  const [clientLocations, setClientLocations] = useState<Record<string, string>>(
+    Object.fromEntries(mockClients.map(client => [client.id, client.location]))
+  );
 
   useEffect(() => {
     localStorage.setItem("shortlistedCounts", JSON.stringify(shortlistedCounts));
@@ -105,6 +112,14 @@ export default function Clients() {
     }));
   };
 
+  // Handle location edit save
+  const handleLocationSave = (clientId: string) => {
+    if (locationEdits[clientId] !== undefined) {
+      setClientLocations(prev => ({ ...prev, [clientId]: locationEdits[clientId] }));
+    }
+    setEditingLocationId(null);
+  };
+
   // Update filteredClients to apply filters
   const filteredClients = mockClients.filter(client => {
     const matchesSearch =
@@ -112,10 +127,9 @@ export default function Clients() {
       client.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.preferences.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPriority = !priorityFilter || clientPriorities[client.id] === priorityFilter;
-    // For demo, assume client 1 has site visit, others do not
-    const hasSiteVisit = client.id === "1";
-    const matchesSiteVisit = !siteVisitFilter || (siteVisitFilter === "yes" ? hasSiteVisit : !hasSiteVisit);
-    return matchesSearch && matchesPriority && matchesSiteVisit;
+    const clientStatus = getClientProgress(client.id);
+    const matchesStatus = !statusFilter || clientStatus === statusFilter;
+    return matchesSearch && matchesPriority && matchesStatus;
   });
 
   const handleClientClick = (clientId: string) => {
@@ -178,38 +192,33 @@ export default function Clients() {
               </div>
               <Separator className="my-2" />
               <div>
-                <div className="text-xs font-semibold text-muted-foreground mb-2 tracking-wide uppercase">Site Visit</div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={siteVisitFilter === "yes" ? "professional" : "outline"}
-                    className={`rounded-full px-4 ${siteVisitFilter === 'yes' ? 'ring-2 ring-accent' : ''}`}
-                    onClick={() => setSiteVisitFilter(siteVisitFilter === "yes" ? null : "yes")}
-                  >
-                    Has Site Visit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={siteVisitFilter === "no" ? "professional" : "outline"}
-                    className={`rounded-full px-4 ${siteVisitFilter === 'no' ? 'ring-2 ring-accent' : ''}`}
-                    onClick={() => setSiteVisitFilter(siteVisitFilter === "no" ? null : "no")}
-                  >
-                    No Site Visit
-                  </Button>
+                <div className="text-xs font-semibold text-muted-foreground mb-2 tracking-wide uppercase">Status</div>
+                <div className="flex flex-wrap gap-2">
+                  {["Meeting", "Short List", "Site Visit"].map(status => (
+                    <Button
+                      key={status}
+                      size="sm"
+                      variant={statusFilter === status ? "professional" : "outline"}
+                      className={`rounded-full px-4 ${statusFilter === status ? 'ring-2 ring-accent' : ''}`}
+                      onClick={() => setStatusFilter(statusFilter === status ? null : status)}
+                    >
+                      {status}
+                    </Button>
+                  ))}
                 </div>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-end">
-                <Button size="sm" variant="ghost" className="gap-1 text-muted-foreground" onClick={() => { setPriorityFilter(null); setSiteVisitFilter(null); setFilterPopoverOpen(false); }}>
+                <Button size="sm" variant="ghost" className="gap-1 text-muted-foreground" onClick={() => { setPriorityFilter(null); setStatusFilter(null); setFilterPopoverOpen(false); }}>
                   <X className="h-4 w-4" /> Reset
                 </Button>
               </div>
             </div>
           </PopoverContent>
         </Popover>
-        <Button variant="professional">
+        {/* <Button variant="professional">
           Add Client
-        </Button>
+        </Button> */}
         <div className="flex gap-2 ml-auto">
           <Button
             variant={view === 'grid' ? 'professional' : 'outline'}
@@ -248,7 +257,31 @@ export default function Clients() {
                     </CardTitle>
                     <CardDescription className="flex items-center gap-1 mt-1">
                       <MapPin className="h-3 w-3" />
-                      {client.location}
+                      {editingLocationId === client.id ? (
+                        <input
+                          className="border rounded px-1 text-xs w-32"
+                          value={locationEdits[client.id] ?? clientLocations[client.id]}
+                          autoFocus
+                          onChange={e => setLocationEdits(edits => ({ ...edits, [client.id]: e.target.value }))}
+                          onBlur={() => handleLocationSave(client.id)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleLocationSave(client.id);
+                          }}
+                          onClick={e => e.stopPropagation()}
+                        />
+                      ) : (
+                        <>
+                          <span>{clientLocations[client.id]}</span>
+                          <Pencil
+                            className="h-3 w-3 ml-1 cursor-pointer text-muted-foreground hover:text-foreground"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditingLocationId(client.id);
+                              setLocationEdits(edits => ({ ...edits, [client.id]: clientLocations[client.id] }));
+                            }}
+                          />
+                        </>
+                      )}
                     </CardDescription>
                   </div>
                 </div>
@@ -324,7 +357,31 @@ export default function Clients() {
                 <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    {client.location}
+                    {editingLocationId === client.id ? (
+                      <input
+                        className="border rounded px-1 text-xs w-32"
+                        value={locationEdits[client.id] ?? clientLocations[client.id]}
+                        autoFocus
+                        onChange={e => setLocationEdits(edits => ({ ...edits, [client.id]: e.target.value }))}
+                        onBlur={() => handleLocationSave(client.id)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleLocationSave(client.id);
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    ) : (
+                      <>
+                        <span>{clientLocations[client.id]}</span>
+                        <Pencil
+                          className="h-4 w-4 ml-1 cursor-pointer text-muted-foreground hover:text-foreground"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setEditingLocationId(client.id);
+                            setLocationEdits(edits => ({ ...edits, [client.id]: clientLocations[client.id] }));
+                          }}
+                        />
+                      </>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <Mail className="h-4 w-4" />

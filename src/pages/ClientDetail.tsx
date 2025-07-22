@@ -12,9 +12,10 @@ import {
   ArrowLeft, MapPin, Phone, Mail, Calendar, Star, 
   MessageSquare, Home, Bath, Car, Square, 
   Eye, Heart, Share, DollarSign, Bookmark, 
-  CalendarDays, Clock, X 
+  CalendarDays, Clock, X, Pencil 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import React from "react"; // Added for useEffect
 
 // Mock data - in real app, this would come from API
 const mockClientData = {
@@ -127,6 +128,26 @@ export default function ClientDetail() {
     preferredLocations: "",
   });
 
+  const [editingPreferences, setEditingPreferences] = useState(false);
+  const [preferencesDraft, setPreferencesDraft] = useState({
+    propertyConfiguration: activeRequirement.preferences.propertyConfiguration,
+    budget: activeRequirement.preferences.budget,
+    possessionTimeline: activeRequirement.preferences.possessionTimeline,
+    preferredLocations: activeRequirement.preferences.preferredLocations,
+    notes: mockClientData[id as keyof typeof mockClientData]?.notes || ""
+  });
+
+  // When requirement changes, update draft
+  React.useEffect(() => {
+    setPreferencesDraft({
+      propertyConfiguration: activeRequirement.preferences.propertyConfiguration,
+      budget: activeRequirement.preferences.budget,
+      possessionTimeline: activeRequirement.preferences.possessionTimeline,
+      preferredLocations: activeRequirement.preferences.preferredLocations,
+      notes: mockClientData[id as keyof typeof mockClientData]?.notes || ""
+    });
+  }, [activeRequirementId]);
+
   const handleAddRequirement = () => {
     const newId = requirements.length > 0 ? Math.max(...requirements.map(r => r.id)) + 1 : 1;
     const newRequirement = {
@@ -142,6 +163,37 @@ export default function ClientDetail() {
     setAddReqDialog(false);
     setNewReqPreferences({ budget: "", possessionTimeline: "", propertyConfiguration: "", preferredLocations: "" });
     toast({ title: "Requirement Added", description: `Requirement ${newId} has been created.` });
+  };
+
+  const handlePreferencesSave = () => {
+    setRequirements(reqs => reqs.map(r =>
+      r.id === activeRequirementId
+        ? {
+            ...r,
+            preferences: {
+              ...r.preferences,
+              propertyConfiguration: preferencesDraft.propertyConfiguration,
+              budget: preferencesDraft.budget,
+              possessionTimeline: preferencesDraft.possessionTimeline,
+              preferredLocations: preferencesDraft.preferredLocations,
+            }
+          }
+        : r
+    ));
+    // Save notes to mockClientData (in real app, would update backend)
+    mockClientData[id as keyof typeof mockClientData].notes = preferencesDraft.notes;
+    setEditingPreferences(false);
+    toast({ title: "Preferences Updated" });
+  };
+  const handlePreferencesCancel = () => {
+    setPreferencesDraft({
+      propertyConfiguration: activeRequirement.preferences.propertyConfiguration,
+      budget: activeRequirement.preferences.budget,
+      possessionTimeline: activeRequirement.preferences.possessionTimeline,
+      preferredLocations: activeRequirement.preferences.preferredLocations,
+      notes: mockClientData[id as keyof typeof mockClientData]?.notes || ""
+    });
+    setEditingPreferences(false);
   };
 
   if (!mockClientData[id as keyof typeof mockClientData]) {
@@ -255,7 +307,7 @@ export default function ClientDetail() {
           <div className="flex items-center gap-2 mt-1">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">{mockClientData[id as keyof typeof mockClientData]?.location}</span>
-            <Badge variant="default">{mockClientData[id as keyof typeof mockClientData]?.status}</Badge>
+            {/* <Badge variant="default">{mockClientData[id as keyof typeof mockClientData]?.status}</Badge> */}
             <Badge variant="destructive">{mockClientData[id as keyof typeof mockClientData]?.priority} Priority</Badge>
           </div>
         </div>
@@ -320,34 +372,95 @@ export default function ClientDetail() {
 
           {/* Preferences */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Preferences (Requirement {activeRequirementId})</CardTitle>
+              <Pencil className="h-4 w-4 ml-2 cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setEditingPreferences(true)} />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium mb-1">Property Type</p>
-                <p className="text-sm text-muted-foreground">{activeRequirement.preferences.propertyConfiguration}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Budget Range</p>
-                <p className="text-sm text-muted-foreground font-semibold text-success">{activeRequirement.preferences.budget}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Possession Timeline</p>
-                <p className="text-sm text-muted-foreground">{activeRequirement.preferences.possessionTimeline}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Property Configuration</p>
-                <p className="text-sm text-muted-foreground">{activeRequirement.preferences.propertyConfiguration}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Preferred Locations</p>
-                <p className="text-sm text-muted-foreground">{activeRequirement.preferences.preferredLocations}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Notes</p>
-                <p className="text-sm text-muted-foreground">{mockClientData[id as keyof typeof mockClientData]?.notes}</p>
-              </div>
+              {editingPreferences ? (
+                <>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Type</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.propertyConfiguration}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, propertyConfiguration: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Budget Range</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.budget}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, budget: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Possession Timeline</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.possessionTimeline}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, possessionTimeline: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Configuration</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.propertyConfiguration}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, propertyConfiguration: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Preferred Locations</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.preferredLocations}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, preferredLocations: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Notes</p>
+                    <textarea
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.notes}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, notes: e.target.value }))}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="professional" size="sm" onClick={handlePreferencesSave}>Save</Button>
+                    <Button variant="outline" size="sm" onClick={handlePreferencesCancel}>Cancel</Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Type</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.propertyConfiguration}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Budget Range</p>
+                    <p className="text-sm text-muted-foreground font-semibold text-success">{activeRequirement.preferences.budget}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Possession Timeline</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.possessionTimeline}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Configuration</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.propertyConfiguration}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Preferred Locations</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.preferredLocations}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Notes</p>
+                    <p className="text-sm text-muted-foreground">{mockClientData[id as keyof typeof mockClientData]?.notes}</p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -396,7 +509,7 @@ export default function ClientDetail() {
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="properties">Matched Properties</TabsTrigger>
                   <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
-                  <TabsTrigger value="sitevisits">Site Visits</TabsTrigger>
+                  <TabsTrigger value="conversations">Conversations</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="properties">
@@ -632,18 +745,55 @@ export default function ClientDetail() {
                   )}
                 </TabsContent>
 
-                <TabsContent value="sitevisits">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {activeRequirement.siteVisits.length === 0 ? <div className="text-muted-foreground">No site visits scheduled yet for this requirement.</div> : activeRequirement.siteVisits.map((visit, idx) => (
-                      <Card key={idx} className="bg-muted/50 animate-slide-up" style={{ animationDelay: `${idx * 0.1}s` }}>
-                        <CardContent className="p-3 flex flex-col gap-1">
-                          <div className="font-semibold">{visit.property?.title}</div>
-                          <div className="text-xs text-muted-foreground">{visit.property?.address}</div>
-                          <div className="flex items-center gap-2 text-sm"><Calendar className="h-4 w-4" />{visit.date} at {visit.time}</div>
-                          {visit.notes && (<div className="text-xs text-muted-foreground italic">{visit.notes}</div>)}
-                        </CardContent>
-                      </Card>
-                    ))}
+                <TabsContent value="conversations">
+                  <div className="space-y-4">
+                    {(() => {
+                      const conversations = mockClientData[id as keyof typeof mockClientData]?.conversations || [];
+                      const types = [
+                        { key: "call", label: "Call" },
+                        { key: "WhatsApp Bot", label: "WhatsApp Bot" },
+                        { key: "WebBot", label: "WebBot" },
+                        { key: "call(Bot)", label: "Call(Bot)" },
+                      ];
+                      // Group conversations by type
+                      const grouped = types.map(t => ({
+                        ...t,
+                        items: conversations.filter(c => c.type === t.key)
+                      }));
+                      // State for open cards
+                      const [open, setOpen] = React.useState<string | null>(null);
+                      return (
+                        <>
+                          {grouped.map(group => (
+                            group.items.length > 0 && (
+                              <div key={group.key} className="border rounded shadow-sm bg-white">
+                                <div
+                                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted"
+                                  onClick={() => setOpen(open === group.key ? null : group.key)}
+                                >
+                                  <div className="font-semibold text-lg">{group.label}</div>
+                                  <div className="text-xs text-muted-foreground">{group.items[0].date}</div>
+                                  <span className="ml-2">{open === group.key ? "▲" : "▼"}</span>
+                                </div>
+                                {open === group.key && (
+                                  <div className="p-4 border-t bg-muted/50">
+                                    {group.items.map((item, idx) => (
+                                      <div key={idx} className="mb-2">
+                                        <div className="text-sm font-medium">{item.date}</div>
+                                        <div className="text-sm text-muted-foreground">{item.summary}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          ))}
+                          {grouped.every(g => g.items.length === 0) && (
+                            <div className="text-center text-muted-foreground py-8">No conversations found for this client.</div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </TabsContent>
               </Tabs>
