@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Phone, Mail, Calendar, Star, List, LayoutGrid } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { X } from "lucide-react";
 
 // Mock client data
 const mockClients = [
@@ -80,6 +83,9 @@ export default function Clients() {
   const [view, setView] = useState<'grid' | 'list'>("grid");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
+  const [siteVisitFilter, setSiteVisitFilter] = useState<string | null>(null);
 
   // Add state to track shortlisted counts for each client (simulate for demo)
   const [shortlistedCounts, setShortlistedCounts] = useState<Record<string, number>>(() => {
@@ -99,11 +105,18 @@ export default function Clients() {
     }));
   };
 
-  const filteredClients = mockClients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.preferences.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Update filteredClients to apply filters
+  const filteredClients = mockClients.filter(client => {
+    const matchesSearch =
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.preferences.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPriority = !priorityFilter || clientPriorities[client.id] === priorityFilter;
+    // For demo, assume client 1 has site visit, others do not
+    const hasSiteVisit = client.id === "1";
+    const matchesSiteVisit = !siteVisitFilter || (siteVisitFilter === "yes" ? hasSiteVisit : !hasSiteVisit);
+    return matchesSearch && matchesPriority && matchesSiteVisit;
+  });
 
   const handleClientClick = (clientId: string) => {
     navigate(`/clients/${clientId}`);
@@ -141,9 +154,59 @@ export default function Clients() {
             className="pl-10"
           />
         </div>
-        <Button variant="outline">
-          Filter
-        </Button>
+        <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline">Filter</Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 rounded-lg border border-border shadow-xl p-4">
+            <div className="space-y-4">
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground mb-2 tracking-wide uppercase">Priority</div>
+                <div className="flex gap-2">
+                  {["High", "Medium", "Low"].map(p => (
+                    <Button
+                      key={p}
+                      size="sm"
+                      variant={priorityFilter === p ? "professional" : "outline"}
+                      className={`rounded-full px-4 ${priorityFilter === p ? 'ring-2 ring-accent' : ''}`}
+                      onClick={() => setPriorityFilter(priorityFilter === p ? null : p)}
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <Separator className="my-2" />
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground mb-2 tracking-wide uppercase">Site Visit</div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={siteVisitFilter === "yes" ? "professional" : "outline"}
+                    className={`rounded-full px-4 ${siteVisitFilter === 'yes' ? 'ring-2 ring-accent' : ''}`}
+                    onClick={() => setSiteVisitFilter(siteVisitFilter === "yes" ? null : "yes")}
+                  >
+                    Has Site Visit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={siteVisitFilter === "no" ? "professional" : "outline"}
+                    className={`rounded-full px-4 ${siteVisitFilter === 'no' ? 'ring-2 ring-accent' : ''}`}
+                    onClick={() => setSiteVisitFilter(siteVisitFilter === "no" ? null : "no")}
+                  >
+                    No Site Visit
+                  </Button>
+                </div>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-end">
+                <Button size="sm" variant="ghost" className="gap-1 text-muted-foreground" onClick={() => { setPriorityFilter(null); setSiteVisitFilter(null); setFilterPopoverOpen(false); }}>
+                  <X className="h-4 w-4" /> Reset
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         <Button variant="professional">
           Add Client
         </Button>
