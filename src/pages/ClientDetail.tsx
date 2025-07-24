@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,7 @@ import {
   CalendarDays, Clock, X, Pencil 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import React from "react"; // Added for useEffect
+import Chatbot from "@/components/Chatbot";
 
 // Mock data - in real app, this would come from API
 const mockClientData = {
@@ -84,6 +84,8 @@ const mockClientData = {
   }
 };
 
+const LOCALSTORAGE_PREFIX = 'client_chat_';
+
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -130,6 +132,7 @@ export default function ClientDetail() {
 
   const [editingPreferences, setEditingPreferences] = useState(false);
   const [preferencesDraft, setPreferencesDraft] = useState({
+    name: activeRequirement.name,
     propertyConfiguration: activeRequirement.preferences.propertyConfiguration,
     budget: activeRequirement.preferences.budget,
     possessionTimeline: activeRequirement.preferences.possessionTimeline,
@@ -140,6 +143,7 @@ export default function ClientDetail() {
   // When requirement changes, update draft
   React.useEffect(() => {
     setPreferencesDraft({
+      name: activeRequirement.name,
       propertyConfiguration: activeRequirement.preferences.propertyConfiguration,
       budget: activeRequirement.preferences.budget,
       possessionTimeline: activeRequirement.preferences.possessionTimeline,
@@ -170,6 +174,7 @@ export default function ClientDetail() {
       r.id === activeRequirementId
         ? {
             ...r,
+            name: preferencesDraft.name,
             preferences: {
               ...r.preferences,
               propertyConfiguration: preferencesDraft.propertyConfiguration,
@@ -187,6 +192,7 @@ export default function ClientDetail() {
   };
   const handlePreferencesCancel = () => {
     setPreferencesDraft({
+      name: activeRequirement.name,
       propertyConfiguration: activeRequirement.preferences.propertyConfiguration,
       budget: activeRequirement.preferences.budget,
       possessionTimeline: activeRequirement.preferences.possessionTimeline,
@@ -307,7 +313,6 @@ export default function ClientDetail() {
           <div className="flex items-center gap-2 mt-1">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">{mockClientData[id as keyof typeof mockClientData]?.location}</span>
-            {/* <Badge variant="default">{mockClientData[id as keyof typeof mockClientData]?.status}</Badge> */}
             <Badge variant="destructive">{mockClientData[id as keyof typeof mockClientData]?.priority} Priority</Badge>
           </div>
         </div>
@@ -316,64 +321,22 @@ export default function ClientDetail() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Client Details */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Basic Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{mockClientData[id as keyof typeof mockClientData]?.email}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{mockClientData[id as keyof typeof mockClientData]?.phone}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Last contact: {new Date(mockClientData[id as keyof typeof mockClientData]?.lastContact || "").toLocaleDateString()}</span>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Site Visits Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Visits</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {activeRequirement.siteVisits.length === 0 ? (
-                <div className="text-center text-muted-foreground py-6">
-                  <CalendarDays className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No site visits scheduled yet for this requirement.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {activeRequirement.siteVisits.map((visit, idx) => (
-                    <Card key={idx} className="bg-muted/50">
-                      <CardContent className="p-3 flex flex-col gap-1">
-                        <div className="font-semibold">{visit.property?.title}</div>
-                        <div className="text-xs text-muted-foreground">{visit.property?.address}</div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4" />
-                          {visit.date} at {visit.time}
-                        </div>
-                        {visit.notes && (
-                          <div className="text-xs text-muted-foreground italic">{visit.notes}</div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Preferences */}
-          <Card>
+            {/* Preferences */}
+            <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Preferences (Requirement {activeRequirementId})</CardTitle>
+              <CardTitle>
+                {editingPreferences ? (
+                  <input
+                    className="border rounded px-2 py-1 text-lg font-semibold w-full"
+                    value={preferencesDraft.name}
+                    onChange={e => setPreferencesDraft(d => ({ ...d, name: e.target.value }))}
+                  />
+                ) : (
+                  preferencesDraft.name || `Requirement ${activeRequirementId}`
+                )}
+              </CardTitle>
               <Pencil className="h-4 w-4 ml-2 cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setEditingPreferences(true)} />
             </CardHeader>
             <CardContent className="space-y-4">
@@ -463,6 +426,165 @@ export default function ClientDetail() {
               )}
             </CardContent>
           </Card>
+          
+
+          {/* Site Visits Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Site Visits</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {activeRequirement.siteVisits.length === 0 ? (
+                <div className="text-center text-muted-foreground py-6">
+                  <CalendarDays className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No site visits scheduled yet for this requirement.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {activeRequirement.siteVisits.map((visit, idx) => (
+                    <Card key={idx} className="bg-muted/50">
+                      <CardContent className="p-3 flex flex-col gap-1">
+                        <div className="font-semibold">{visit.property?.title}</div>
+                        <div className="text-xs text-muted-foreground">{visit.property?.address}</div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4" />
+                          {visit.date} at {visit.time}
+                        </div>
+                        {visit.notes && (
+                          <div className="text-xs text-muted-foreground italic">{visit.notes}</div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Basic Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{mockClientData[id as keyof typeof mockClientData]?.email}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{mockClientData[id as keyof typeof mockClientData]?.phone}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Last contact: {new Date(mockClientData[id as keyof typeof mockClientData]?.lastContact || "").toLocaleDateString()}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Preferences
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>
+                {editingPreferences ? (
+                  <input
+                    className="border rounded px-2 py-1 text-lg font-semibold w-full"
+                    value={preferencesDraft.name}
+                    onChange={e => setPreferencesDraft(d => ({ ...d, name: e.target.value }))}
+                  />
+                ) : (
+                  preferencesDraft.name || `Requirement ${activeRequirementId}`
+                )}
+              </CardTitle>
+              <Pencil className="h-4 w-4 ml-2 cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setEditingPreferences(true)} />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {editingPreferences ? (
+                <>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Type</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.propertyConfiguration}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, propertyConfiguration: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Budget Range</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.budget}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, budget: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Possession Timeline</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.possessionTimeline}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, possessionTimeline: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Configuration</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.propertyConfiguration}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, propertyConfiguration: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Preferred Locations</p>
+                    <input
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.preferredLocations}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, preferredLocations: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Notes</p>
+                    <textarea
+                      className="border rounded px-2 py-1 text-sm w-full"
+                      value={preferencesDraft.notes}
+                      onChange={e => setPreferencesDraft(d => ({ ...d, notes: e.target.value }))}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="professional" size="sm" onClick={handlePreferencesSave}>Save</Button>
+                    <Button variant="outline" size="sm" onClick={handlePreferencesCancel}>Cancel</Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Type</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.propertyConfiguration}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Budget Range</p>
+                    <p className="text-sm text-muted-foreground font-semibold text-success">{activeRequirement.preferences.budget}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Possession Timeline</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.possessionTimeline}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Property Configuration</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.propertyConfiguration}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Preferred Locations</p>
+                    <p className="text-sm text-muted-foreground">{activeRequirement.preferences.preferredLocations}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Notes</p>
+                    <p className="text-sm text-muted-foreground">{mockClientData[id as keyof typeof mockClientData]?.notes}</p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card> */}
 
           {/* Quick Actions */}
           <Card>
@@ -794,6 +916,8 @@ export default function ClientDetail() {
                         </>
                       );
                     })()}
+                    {/* WebBot Chat History from localStorage */}
+                    <WebBotChatHistory clientId={id} />
                   </div>
                 </TabsContent>
               </Tabs>
@@ -1041,6 +1165,48 @@ export default function ClientDetail() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Place Chatbot at the root so it appears on every client dashboard */}
+      {id && <Chatbot clientId={id} />}
+    </div>
+  );
+}
+
+function WebBotChatHistory({ clientId }: { clientId: string | undefined }) {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [open, setOpen] = useState<boolean>(false);
+  useEffect(() => {
+    if (!clientId) return;
+    const stored = localStorage.getItem(LOCALSTORAGE_PREFIX + clientId);
+    if (stored) setMessages(JSON.parse(stored));
+  }, [clientId]);
+  if (!clientId) return null;
+  return (
+    <div className="border rounded shadow-sm bg-white mt-4">
+      <div
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted"
+        onClick={() => setOpen(o => !o)}
+      >
+        <div className="font-semibold text-lg">WebBot Chat History</div>
+        <span className="ml-2">{open ? "▲" : "▼"}</span>
+      </div>
+      {open && (
+        <div className="p-4 border-t bg-muted/50">
+          {messages.length === 0 ? (
+            <div className="text-muted-foreground text-sm">No WebBot chat history for this client.</div>
+          ) : (
+            <div className="space-y-2">
+              {messages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`rounded-lg px-3 py-2 max-w-xs ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-900'}`}>
+                    <div className="text-xs opacity-70 mb-1">{msg.sender === 'user' ? 'You' : 'WebBot'} &middot; {new Date(msg.timestamp).toLocaleString()}</div>
+                    <div>{msg.text}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
